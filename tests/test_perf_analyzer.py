@@ -30,7 +30,6 @@ from model_analyzer.triton.server.server_config import TritonServerConfig
 from model_analyzer.triton.server.server_local_factory import TritonServerLocalFactory
 from model_analyzer.analyzer.perf_analyzer.perf_analyzer import PerfAnalyzer
 from model_analyzer.analyzer.perf_analyzer.perf_config import PerfAnalyzerConfig
-from model_analyzer.analyzer.perf_analyzer.perf_record import PerfRecord
 from model_analyzer.model_analyzer_exceptions import TritonModelAnalyzerException
 
 # Test Parameters
@@ -63,6 +62,22 @@ PERF_RECORD_EXAMPLE = (
     "    Avg request latency: 2000 usec\n\n"
     "Inferences/Second vs. Client Average Batch Latency\n"
     "Concurrency: 1, throughput: 45 infer/sec, latency 22222 usec\n")
+
+PERF_RECORD_DICT = {
+    'Batch size': 1,
+    'Measurement window': 5000,
+    'Concurrency': 4,
+    'Request count': 100,
+    'Throughput': 40.8,
+    'Avg latency': 2000,
+    'p50 latency': 2000,
+    'p90 latency': 2000,
+    'p95 latency': 2000,
+    'p99 latency': 2000,
+    'Inference count': 100,
+    'Execution count': 100,
+    'Successful request count': 100,
+    'Avg request latency': 2000}
 
 
 class TestPerfAnalyzerMethods(unittest.TestCase):
@@ -105,25 +120,15 @@ class TestPerfAnalyzerMethods(unittest.TestCase):
             model_path=MODEL_LOCAL_PATH,
             version=TRITON_VERSION,
             config=server_config)
-        client = PerfAnalyzer(config=self.config)
+        perf_client = PerfAnalyzer(config=self.config)
 
         self.server.start()
         self.server.wait_for_ready(num_retries=10)
 
-        # run job with test sweep params
-        outputs = client.run_job(sweep_params=TEST_RUN_PARAMS)
-
-        # Ensure correct number of runs
-        self.assertEqual(len(outputs), 4)
+        # Run perf analyzer
+        throughput_record, latency_record = perf_client.run()
 
         self.server.stop()
-
-    def test_perf_record(self):
-        # Create a perf record from the example
-        record = PerfRecord(PERF_RECORD_EXAMPLE)
-
-        # Now check that the output was correctly parsed
-        self.assertEqual(str(record), PERF_RECORD_EXAMPLE.rsplit('\n', 3)[0])
 
     def tearDown(self):
         # In case test raises exception
