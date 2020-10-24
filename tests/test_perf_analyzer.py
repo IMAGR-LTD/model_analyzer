@@ -31,6 +31,8 @@ from model_analyzer.triton.server.server_local_factory import TritonServerLocalF
 from model_analyzer.analyzer.perf_analyzer.perf_analyzer import PerfAnalyzer
 from model_analyzer.analyzer.perf_analyzer.perf_config import PerfAnalyzerConfig
 from model_analyzer.model_analyzer_exceptions import TritonModelAnalyzerException
+from model_analyzer.record.perf_throughput import PerfThroughput
+from model_analyzer.record.perf_latency import PerfLatency
 
 # Test Parameters
 MODEL_LOCAL_PATH = '/model_analyzer/models'
@@ -38,10 +40,7 @@ MODEL_REPOSITORY_PATH = '/model_analyzer/models'
 TRITON_VERSION = '20.09'
 TEST_MODEL_NAME = 'classification_chestxray_v1'
 CONFIG_TEST_ARG = 'sync'
-TEST_RUN_PARAMS = {
-    'batch-size': [1, 2],
-    'concurrency-range': [2, 4]
-}
+TEST_RUN_PARAMS = {'batch-size': [1, 2], 'concurrency-range': [2, 4]}
 PERF_RECORD_EXAMPLE = (
     "*** Measurement Settings ***\n"
     "  Batch size: 1\n"
@@ -77,11 +76,11 @@ PERF_RECORD_DICT = {
     'Inference count': 100,
     'Execution count': 100,
     'Successful request count': 100,
-    'Avg request latency': 2000}
+    'Avg request latency': 2000
+}
 
 
 class TestPerfAnalyzerMethods(unittest.TestCase):
-
     def setUp(self):
         # PerfAnalyzer config for all tests
         self.config = PerfAnalyzerConfig()
@@ -116,19 +115,39 @@ class TestPerfAnalyzerMethods(unittest.TestCase):
 
         # Create server, PerfAnalyzer, and wait for server ready
         factory = TritonServerLocalFactory()
-        self.server = factory.create_server(
-            model_path=MODEL_LOCAL_PATH,
-            version=TRITON_VERSION,
-            config=server_config)
+        self.server = factory.create_server(model_path=MODEL_LOCAL_PATH,
+                                            version=TRITON_VERSION,
+                                            config=server_config)
         perf_client = PerfAnalyzer(config=self.config)
 
         self.server.start()
-        self.server.wait_for_ready(num_retries=10)
+        self.server.wait_for_ready(num_retries=50)
 
         # Run perf analyzer
         throughput_record, latency_record = perf_client.run()
 
         self.server.stop()
+
+    def test_parse_perf_output(self):
+        perf_client = PerfAnalyzer(config=self.config)
+
+        # Test latency parsing (output is at least 4 lines)
+        test_latency_output = "Avg latency: 5000 ms\n\n\n\n"
+        _, latency_record = perf_client._parse_perf_output(test_latency_output)
+        self.assertEqual(latency_record.value(), 5000)
+
+        # Test throughput parsing
+        test_throughput_output = "Throughput: 46.8 ms\n\n\n\n"
+        throughput_record, _ = perf_client._parse_perf_output(
+            test_throughput_output)
+        self.assertEqual(throughput_record.value(), 46.8)
+
+        # Test parsing for both
+        test_both_output = "Throughput: 0.001 ms\nAvg latency: 3.6 ms\n\n\n\n"
+        throughput_record, latency_record = perf_client._parse_perf_output(
+            test_both_output)
+        self.assertEqual(throughput_record.value(), 0.001)
+        self.assertEqual(latency_record.value(), 3.6)
 
     def tearDown(self):
         # In case test raises exception
