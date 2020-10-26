@@ -41,43 +41,6 @@ TRITON_VERSION = '20.09'
 TEST_MODEL_NAME = 'classification_chestxray_v1'
 CONFIG_TEST_ARG = 'sync'
 TEST_RUN_PARAMS = {'batch-size': [1, 2], 'concurrency-range': [2, 4]}
-PERF_RECORD_EXAMPLE = (
-    "*** Measurement Settings ***\n"
-    "  Batch size: 1\n"
-    "  Measurement window: 5000 msec\n\n"
-    "Request concurrency: 4\n"
-    "  Client:\n"
-    "    Request count: 100\n"
-    "    Throughput: 40.8 infer/sec\n"
-    "    Avg latency: 2000 usec\n"
-    "    p50 latency: 2000 usec\n"
-    "    p90 latency: 2000 usec\n"
-    "    p95 latency: 2000 usec\n"
-    "    p99 latency: 2000 usec\n"
-    "  Server:\n"
-    "    Inference count: 100\n"
-    "    Execution count: 100\n"
-    "    Successful request count: 100\n"
-    "    Avg request latency: 2000 usec\n\n"
-    "Inferences/Second vs. Client Average Batch Latency\n"
-    "Concurrency: 1, throughput: 45 infer/sec, latency 22222 usec\n")
-
-PERF_RECORD_DICT = {
-    'Batch size': 1,
-    'Measurement window': 5000,
-    'Concurrency': 4,
-    'Request count': 100,
-    'Throughput': 40.8,
-    'Avg latency': 2000,
-    'p50 latency': 2000,
-    'p90 latency': 2000,
-    'p95 latency': 2000,
-    'p99 latency': 2000,
-    'Inference count': 100,
-    'Execution count': 100,
-    'Successful request count': 100,
-    'Avg request latency': 2000
-}
 
 
 class TestPerfAnalyzerMethods(unittest.TestCase):
