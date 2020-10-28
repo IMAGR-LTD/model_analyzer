@@ -1,0 +1,31 @@
+timeout: 1200s
+
+
+substitutions:
+  _BUILD_DIRECTORY: "./" #set to kustomize to run in a trigger
+  _MEMORY_ANALYZER_VERSION: v1
+  _LATEST_TAG: latest
+
+
+options:
+    substitution_option: 'ALLOW_LOOSE'
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    dir: ${_BUILD_DIRECTORY}
+    args:
+      - build
+      - --tag=gcr.io/$PROJECT_ID/ml/nvidia/memory-analyzer:${_LATEST_TAG}
+      - --tag=gcr.io/$PROJECT_ID/ml/nvidia/memory-analyzer:${_MEMORY_ANALYZER_VERSION}
+      - "."
+
+images:
+  - gcr.io/$PROJECT_ID/ml/nvidia/memory-analyzer:${_LATEST_TAG}
+  - gcr.io/$PROJECT_ID/ml/nvidia/memory-analyzer:${_MEMORY_ANALYZER_VERSION}
+
+
+tags:
+  - nvidia
+  - memory-analyzer
+  - ml
+  - triton
